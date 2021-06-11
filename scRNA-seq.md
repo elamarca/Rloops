@@ -226,7 +226,7 @@ dotplot(gse, showCategory=5, split=".sign") + facet_grid(.~.sign)
 emapplot(gse, showCategory = 10)   
 ```
 
-###Category Map: categorySize can be either 'pvalue' or 'geneNum'  
+### Category Map
 ```r
 cnetplot(gse, categorySize="pvalue", foldChange=gene_list, showCategory = 3)  
 ```
