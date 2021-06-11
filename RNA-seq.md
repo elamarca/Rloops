@@ -1,6 +1,6 @@
 # RNA-seq
 
-# Check FASTQ quality
+## Check FASTQ quality
 ```bash  
 module load fastqc/0.11.8
 
@@ -9,7 +9,8 @@ do
 fastqc -t 8 $i  
 done  
 ```
-# Trim adapters if necessary
+
+## Trim adapters if necessary
 ```bash  
 module load trimmomatic/0.36  
 
@@ -21,15 +22,14 @@ R2=$IN/*R2.fastq.gz
 trimmomatic PE -phred33 $R1 $R2 ${R1}_pairedout ${R1}_unpairedout ${R2}_pairedout ${R2}_unpairedout ILLUMINACLIP:$ADAPTERS/TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 AVGQUAL:20 MINLEN:36  
 ```
 
-# Generate STAR genome directory
-
+## Generate STAR genome directory
 ```bash
 module load star/2.5.3a  
 
 STAR --runThreadN 8 --runMode genomeGenerate --genomeDir STAR --genomeFastaFiles GRCh37.p13.genome.fa --sjdbGTFfile gencode.v19.annotation.gtf --sjdbOverhang 149
 ```
-# Alignment
 
+## Alignment
 ```bash
 genomeDir=/path/to/STAR/  
 REF=/path/to/GRCh37.p13.genome.fa  
@@ -41,8 +41,7 @@ FASTQ2='fastq/*L005_001.R2.fastq.gz'
 STAR --runThreadN 8 --genomeDir $genomeDir --sjdbGTFfile $GTF --sjdbOverhang 149 --bamRemoveDuplicatesType UniqueIdentical --readFilesIn $FASTQ1 $FASTQ2 --twopassMode Basic --outSAMtype BAM SortedByCoordinate Unsorted --quantMode TranscriptomeSAM GeneCounts --readFilesCommand zcat
 ```
 
-# Merge BAMS if necessary
-
+## Merge BAMS if necessary
 ```bash
 BAM1='Run3/Aligned.sortedByCoord.out.bam'  
 BAM2='Run4/Aligned.sortedByCoord.out.bam'  
@@ -50,8 +49,7 @@ BAM3='Run5/Aligned.sortedByCoord.out.bam'
 samtools merge RH1_merged.bam $BAM1 $BAM2 $BAM3
 ```
 
-# Remove ribosomal and mitochondrial RNA
-
+## Remove ribosomal and mitochondrial RNA
 ```bash
 module load bedtools/2.29.2  
 
@@ -59,8 +57,7 @@ bedtools intersect -a Aligned.sortedByCoord.out.bam -b hg19_rRNA.bed -v > Sample
 bedtools intersect -a Sample_L1_alignedSorted_rRNArm.bam -b hg19_MT.bed -v > Sample_X_alignedSorted_rRNArm_MTrm.bam  
 ```
 
-# Get Count Matrix
-
+## Get Count Matrix
 ```bash
 module load subread/1.5.2  
 
@@ -72,7 +69,6 @@ featureCounts -T 8 -p -t gene -s 1 -O -F GTF -a $GTF -o $OUT/Counts_gene_strande
 ```
 
 # Differential Gene Expression
-
 ```R
 library(DESeq2)  
 library(dplyr)  
@@ -104,8 +100,7 @@ dds <- DESeqDataSetFromMatrix(countData = counttab,
 dds <- dds[rowSums(counts(dds) >= 10) >= 2,]  
 ```
 
-# Stabilize variance for multidimensional scaling
-
+## Stabilize variance for multidimensional scaling
 ```r
 library(vsn)
 library(pheatmap)
@@ -176,8 +171,7 @@ ggplot(mds, aes(x = `1`, y = `2`, color = group, shape = celltype)) +
   geom_point(size = 3) + coord_fixed()  
 ```
 
-# DESEQ2
-
+## DESEQ2
 ```r
 dds <- DESeq(dds)  
 res <- results(dds, contrast=c("group","BFP","RH1"))    
@@ -186,8 +180,7 @@ table(sig_res$padj < 0.05)
 summary(sig_res)  
 ```
 
-# Annotation
-
+## Annotation
 ```r  
 library(AnnotationDbi)  
 library(org.Hs.eg.db)  
@@ -203,7 +196,6 @@ write.csv(res, "/path/to/deseq.csv", quote=FALSE)
 ```
 
 # Visualization of DEG results
-
 ```r
 library(ggbeeswarm)  
 
@@ -221,7 +213,7 @@ ggplot(rnaseh1, aes(x=group, y=count, col=group)) +
   scale_y_log10()  
 ```
 
-## Heatmap
+### Heatmap
 ```r
 library(circlize)  
 library(ComplexHeatmap)  
@@ -234,7 +226,7 @@ mat <- assay(rld)[topgenes,]
 mat <- mat - rowMeans(mat)  
 Heatmap(mat, name = "Normalized Counts", col = colors, column_title = "BFP vs. RNase H1")  
 ```
-## Volcano Plot
+### Volcano Plot
 ```r  
 library(EnhancedVolcano)  
 
