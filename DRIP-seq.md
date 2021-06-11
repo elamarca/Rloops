@@ -151,6 +151,7 @@ write.table(out, file="DRIP.txt", sep="\t", quote=F, row.names=F)
 ``` r
 library(ChIPpeakAnno)
 library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+library(org.Hs.eg.db)
 txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
 
 peak <-readPeakFile("DRIP.txt")
@@ -160,4 +161,53 @@ peakAnno <- annotatePeak(peak, TxDb=txdb, annoDb="org.Hs.eg.db",
 plotAnnoBar(peakAnno)
 annotation <- as.data.frame(peakAnno)
 write.table(annotation, file="DRIP.annotated.txt", sep="\t", quote=F, row.names=F, col.names=F)
+
+GM_enrich <- out %>% 
+  filter(FDR < 0.01 & Fold > 2.2)
+write.table(GM_enrich, file="GM_DRIP.bed", sep="\t", quote=F, row.names=F, col.names=F)
+
+CP_enrich <- out %>% 
+  filter(FDR < 0.01 & Fold < -2.2)
+
+# Write to file
+write.table(CP_enrich, file="CP_DRIP.bed", sep="\t", quote=F, row.names=F, col.names=F)
 ```
+
+## Permutation Testing (Used, with adapatation of input files, for Figures 1G+H and 1P Z-scores)
+``` r
+library(regioneR)
+library(diffloop)
+library(GenomicFeatures)
+library(GenomicRanges)
+
+cprna<-read.table("cpRNA_fc0.01fc.txt", header = TRUE, sep="\t")
+names(cprna)<-c("Chromosome", "Start", "End", "ID")
+cprna<-with(cprna, GRanges(Chromosome, IRanges(start = Start, end = End), ID = ID))
+cprna<-rmchr(cprna)
+
+gmrna<-read.table("gmRNA_fc0.01fcc.txt", header = TRUE, sep="\t")
+names(vzrna)<-c("Chromosome", "Start", "End", "ID")
+gmrna<-with(gmrna, GRanges(Chromosome, IRanges(start = Start, end = End), ID = ID))
+gmrna<-rmchr(gmrna)
+
+cpdrip<-read.table("CP_DRIP.bed", header = F, sep="\t")
+names(cpdrip)<-c("Chromosome", "Start", "End")
+cpdrip<-with(cpdrip, GRanges(Chromosome, IRanges(start = Start, end = End)))
+cpdrip<-rmchr(cpdrip)
+
+gmdrip<-read.table("GM_DRIP.bed", header = F, sep="\t")
+names(gmdrip)<-c("Chromosome", "Start", "End")
+gmdrip<-with(gmdrip, GRanges(Chromosome, IRanges(start = Start, end = End)))
+gmdrip<-rmchr(gmdrip)
+
+allexpressed<-read.table("AllExpressedGenes.txt", header = TRUE, sep="\t")
+names(allexpressed)<-c("Ensembl", "Chromosome", "Start", "End", "Strand")
+allexpressed<-with(allexpressed, GRanges(Chromosome, IRanges(start = Start, end = End)))
+allexpressed<-rmchr(allexpressed)
+
+
+pt.reg <- permTest(A=cprna, ntimes=10000, randomize.function=resampleRegions, universe=allexpressed,
+                   evaluate.function=numOverlaps, B=gmdrip, count.once=T, mc.cores=11)
+plot(pt.reg)
+```
+
