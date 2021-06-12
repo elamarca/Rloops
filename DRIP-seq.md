@@ -180,6 +180,21 @@ library(diffloop)
 library(GenomicFeatures)
 library(GenomicRanges)
 
+promoters<-read.table("promoters.csv", header = TRUE, sep=",")
+names(promoters)<-c("Chromosome", "Start", "End")
+promoters<-with(promoters, GRanges(Chromosome, IRanges(start = Start, end = End)))
+promoters<-rmchr(promoters)
+
+hg19<-read.table("hg19_binned.csv", header = TRUE, sep=",")
+names(hg19)<-c("Chromosome", "Start", "End")
+hg19<-with(hg19, GRanges(Chromosome, IRanges(start = Start, end = End)))
+hg19<-rmchr(hg19)
+
+RloopPrimed<-read.table("GM_DRIP__CP_RNA.csv", header = TRUE, sep=",")
+names(RloopPrimed)<-c("Chromosome", "Start", "End")
+RloopPrimed<-with(RloopPrimed, GRanges(Chromosome, IRanges(start = Start, end = End)))
+RloopPrimed<-rmchr(RloopPrimed)
+
 cprna<-read.table("cpRNA_fc0.01fc.txt", header = TRUE, sep="\t")
 names(cprna)<-c("Chromosome", "Start", "End", "ID")
 cprna<-with(cprna, GRanges(Chromosome, IRanges(start = Start, end = End), ID = ID))
@@ -205,9 +220,21 @@ names(allexpressed)<-c("Ensembl", "Chromosome", "Start", "End", "Strand")
 allexpressed<-with(allexpressed, GRanges(Chromosome, IRanges(start = Start, end = End)))
 allexpressed<-rmchr(allexpressed)
 
-
-pt.reg <- permTest(A=cprna, ntimes=10000, randomize.function=resampleRegions, universe=allexpressed,
-                   evaluate.function=numOverlaps, B=gmdrip, count.once=T, mc.cores=11)
+#Do permutation testing with relevant gene lists (e.g. DRIP-seq, RNA-seq) and relevant background universe (hg19 coordinates binned into 1kb segments, or any gene expressed in GM+CP or NPC+Neuron)
+pt.reg <- permTest(A=RloopPrimed, ntimes=10000, randomize.function=resampleRegions, universe=hg19,
+                   evaluate.function=numOverlaps, B=promoters, count.once=T, mc.cores=11)
 plot(pt.reg)
 ```
 
+# NGS Plot
+``` Bash
+module load ngsplot
+
+#Generate a config file in the format:
+Config file should look like this (tab sep):
+Sample1.bam ROI.bed     "Sample1" 150     blue
+Sample2.subsampled.bam       ROI.bed     "Sample2"       150     green
+Sample3.subsampled.bam       ROI.bed     "Sample3"       150     purple
+
+ngs.plot.r -R bed -G hg19 -C config.txt -O bedfile
+```
