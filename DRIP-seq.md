@@ -220,7 +220,8 @@ names(allexpressed)<-c("Ensembl", "Chromosome", "Start", "End", "Strand")
 allexpressed<-with(allexpressed, GRanges(Chromosome, IRanges(start = Start, end = End)))
 allexpressed<-rmchr(allexpressed)
 
-#Do permutation testing with relevant gene lists (e.g. DRIP-seq, RNA-seq) and relevant background universe (hg19 coordinates binned into 1kb segments, or any gene expressed in GM+CP or NPC+Neuron)
+#Do permutation testing with relevant gene lists (e.g. DRIP-seq, RNA-seq) and relevant background universe 
+#(hg19 coordinates binned into 1kb segments, or any gene expressed in GM+CP or NPC+Neuron)
 pt.reg <- permTest(A=RloopPrimed, ntimes=10000, randomize.function=resampleRegions, universe=hg19,
                    evaluate.function=numOverlaps, B=promoters, count.once=T, mc.cores=11)
 plot(pt.reg)
